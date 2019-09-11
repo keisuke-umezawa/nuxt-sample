@@ -1,5 +1,24 @@
 <template>
   <v-app dark>
+    <v-toolbar
+      app
+      color="primary"
+      class="white--text"
+    >
+      <v-toolbar-side-icon class="white--text"/>
+      <v-toolbar-title v-text="title" />
+    </v-toolbar>
+    <v-content>
+      <v-container>
+        <nuxt/>
+      </v-container>
+    </v-content>
+    <v-footer
+      app
+    >
+      <span>&copy; chug 2019</span>
+    </v-footer>
+
   </v-app>
 </template>
 
