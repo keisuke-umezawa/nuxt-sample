@@ -35,7 +35,8 @@ export default {
   ** Nuxt.js dev-modules
   */
   buildModules: [
-    '@nuxtjs/vuetify',
+    '@nuxtjs/eslint-module',
+    '@nuxtjs/vuetify'
   ],
   /*
   ** Nuxt.js modules
@@ -43,6 +44,7 @@ export default {
   modules: [
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
+    '@nuxtjs/pwa',
   ],
   /*
   ** Axios module configuration
@@ -75,6 +77,13 @@ export default {
   ** Build configuration
   */
   build: {
+    babel: {
+      plugins:
+        [
+          ["@babel/plugin-proposal-decorators", { legacy: true }],
+          ["@babel/plugin-proposal-class-properties", { loose: true }]
+        ]
+    },
     /*
     ** You can extend webpack config here
     */
