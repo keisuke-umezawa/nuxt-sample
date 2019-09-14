@@ -1,0 +1,70 @@
+version: 2
+jobs:
+  deploy_to_prod:
+    working_directory: /app
+    environment:
+      - PROJECT_NAME: "nullsuck"
+      - GOOGLE_PROJECT_ID: "nullsuck"
+      - GOOGLE_COMPUTE_ZONE: "asia-northeast1-a"
+      - GOOGLE_CLUSTER_NAME: "nullsuck"
+    docker:
+      - image: google/cloud-sdk:237.0.0
+    steps:
+      - checkout
+      - run:
+          name: Setup Google Cloud SDK
+          command : |
+            apt-get install -qq -y gettext
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
+      - setup_remote_docker
+      - restore_cache:
+            keys:
+              - v1-{{ .Branch }}
+            paths:
+              - /caches/cache.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /caches/cache.tar | true
+      - run:
+          name: Docker build and push
+          command: |
+            docker build --cache-from=asia.gcr.io/${PROJECT_NAME}/app:latest \
+              -t asia.gcr.io/${PROJECT_NAME}/app:$CIRCLE_SHA1 ./client/.
+            docker tag asia.gcr.io/${PROJECT_NAME}/app:${CIRCLE_SHA1} asia.gcr.io/${PROJECT_NAME}/app:latest
+            docker build --cache-from=asia.gcr.io/${PROJECT_NAME}/api:latest \
+              -t asia.gcr.io/${PROJECT_NAME}/api:$CIRCLE_SHA1 ./server/.
+            docker tag asia.gcr.io/${PROJECT_NAME}/api:${CIRCLE_SHA1} asia.gcr.io/${PROJECT_NAME}/api:latest
+            gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://asia.gcr.io
+            docker push asia.gcr.io/${PROJECT_NAME}/api:${CIRCLE_SHA1}
+            docker push asia.gcr.io/${PROJECT_NAME}/app:${CIRCLE_SHA1}
+          no_output_timeout: 1h
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/cache.tar asia.gcr.io/${PROJECT_NAME}/api:latest asia.gcr.io/${PROJECT_NAME}/app:latest
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/cache.tar
+      - run:
+          name: Deploy to Kubernetes
+          command: |
+            bash ./concat.sh
+            envsubst < ./k8s.yml > ./patched_k8s.yml
+            kubectl apply -f ./patched_k8s.yml
+
+workflows:
+  version: 2
+  deploy_prod:
+    jobs:
+      - deploy_to_prod:
+          filters:
+            branches:
+              only: master

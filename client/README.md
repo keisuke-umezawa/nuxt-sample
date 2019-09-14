@@ -1,6 +1,6 @@
-# nullsuck
+# nurusaku-ai
 
-> My funkadelic Nuxt.js project
+> Sample project for Nurusaku-ai
 
 ## Build Setup
 

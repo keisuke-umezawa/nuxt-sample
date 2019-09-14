@@ -1,32 +1,30 @@
 <template>
-  <v-app dark>
+  <v-app>
+    <v-app-bar
+      fixed
+      app
+      color="primary"
+      class="white--text"
+    >
+      <v-app-bar-nav-icon class="white--text"/>
+      <v-toolbar-title v-text="title" />
+    </v-app-bar>
+    <v-content>
+      <v-container>
+        <nuxt />
+      </v-container>
+    </v-content>
+    <v-footer app>
+      <span>&copy; 2019</span>
+    </v-footer>
   </v-app>
 </template>
 
-<script>
-export default {
-  data () {
-    return {
-      clipped: false,
-      drawer: false,
-      fixed: false,
-      items: [
-        {
-          icon: 'mdi-apps',
-          title: 'Welcome',
-          to: '/'
-        },
-        {
-          icon: 'mdi-chart-bubble',
-          title: 'Inspire',
-          to: '/inspire'
-        }
-      ],
-      miniVariant: false,
-      right: true,
-      rightDrawer: false,
-      title: 'Vuetify.js'
-    }
+<script lang="ts">
+  import { Vue, Component, Getter} from 'nuxt-property-decorator'
+
+  @Component
+  export default class extends Vue {
+    @Getter('GET_TITLE') title: string;
   }
-}
 </script>
